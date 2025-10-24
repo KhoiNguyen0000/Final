@@ -8,17 +8,13 @@ Mục đích: Tìm vùng có mật độ dân số lớn nhất mỗi năm.
 Mục đích: Xem vùng nào có tốc độ tăng dân số tự nhiên cao/thấp nhất.
 4. Mối tương quan giữa tỷ suất sinh thô và tỷ suất chết thô
 Mục đích: Kiểm tra sự cân bằng nhân khẩu học.
-5. So sánh tuổi thọ trung bình (Life_Exp) giữa các vùng
-Mục đích: Đánh giá chất lượng cuộc sống và y tế vùng.
-6. So sánh tỷ số giới tính khi sinh theo vùng và năm
-Mục đích: Phát hiện mất cân bằng giới tính khi sinh.
-7. Mức độ đô thị hóa (tỷ lệ dân thành thị so với tổng dân)
+5. Mức độ đô thị hóa (tỷ lệ dân thành thị so với tổng dân)
 Mục đích: Đánh giá quá trình đô thị hóa của các vùng.
-8. Tỷ lệ thất nghiệp trung bình theo vùng và khu vực
+6. Tỷ lệ thất nghiệp trung bình theo vùng và khu vực
 Mục đích: So sánh thất nghiệp giữa thành thị và nông thôn.
-9. Kết hợp 3 bảng để phân tích mối quan hệ giữa tăng dân số và thất nghiệp
+7. Kết hợp 3 bảng để phân tích mối quan hệ giữa tăng dân số và thất nghiệp
 Mục đích: Xem vùng có tăng dân số mạnh có tỷ lệ thất nghiệp cao không.
-10. Phân tích xu hướng di cư (nhập, xuất, thuần) theo vùng
+8. Phân tích xu hướng di cư (nhập, xuất, thuần) theo vùng
 Mục đích: Xem vùng nào thu hút hay mất dân cư.
 */
 --1
@@ -62,21 +58,14 @@ select region,
 from base
 group by region
 --5
-select region, round(avg(life_expectancy),2) avg_age
-from Urban_rural_data
-group by region
---6
-select region, year, sex_ratio
-from Locality_data
---7
 select region, year, round((urban_population / total_population *100), 2) urbanization
 from Locality_data
---8
+--6
 select REGION, AREA, Round(AVG(TOTAL),2) avg_total, round(AVG(URBAN),2) avg_urban, round(AVG(RURAL),2) avg_rural
 from Unemployed_Data
 group by REGION, AREA
 order by region
---9
+--7
 select ur.AREA, A.year, ur.TOTAL unemployment_total, A.growth
 from Unemployed_Data ur,(
 	SELECT region, year, total_population, 
@@ -84,6 +73,6 @@ from Unemployed_Data ur,(
 	FROM Locality_data)A
 where ur.AREA = A.region and ur.YEAR = A.year
 Order by A.growth desc
---10
+--8
 select region , year, immigration_rate, emigration_rate, round((immigration_rate -  emigration_rate),2) net_migration_rates
 from Locality_data
