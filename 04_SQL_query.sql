@@ -18,7 +18,7 @@ Mục đích: Xem vùng có tăng dân số mạnh có tỷ lệ thất nghiệp
 Mục đích: Xem vùng nào thu hút hay mất dân cư.
 */
 --1
-select region, year, total_population from population_data
+select region, year, avg_population_thousand from population_data
 go
 --2
 with max_population as(
@@ -28,6 +28,7 @@ with max_population as(
 select ld.region, ld.year, mp.max_total
 from population_data ld, max_population mp
 where ld.year = mp.year and ld.population_density = mp.max_total
+go
 --3
 with avg_natural_growth_rate as(
 	select region, avg(natural_growth_rate) avg_value
@@ -47,14 +48,19 @@ select REGION, area_type, Round(AVG(unemployment_rate),2) avg_total, round(AVG(u
 from population_data
 group by REGION, area_type
 order by region
+go
 --7
-select p.region,p.area_type,p.unemployment_rate, A.growth
-from population_data as p, (
-	SELECT region, year, total_population, 
-	round(total_population - LAG(total_population) OVER(PARTITION BY region ORDER BY year),2) growth
-	FROM population_data) as A
-where p.region = A.region and p.year = A.year
-
+with subtable as(
+	select region, year, total_population, ROUND(
+            ( (total_population - LAG(total_population) OVER (PARTITION BY region ORDER BY year))
+              / NULLIF(LAG(total_population) OVER (PARTITION BY region ORDER BY year), 0)
+            ) * 100, 2) population_growth_pct, unemployment_rate
+	from population_data 
+)
+SELECT region, ROUND(AVG(population_growth_pct), 2) population_growth_pct, ROUND(AVG(unemployment_rate), 2) unemployment_rate
+FROM subtable
+GROUP BY region
+ORDER BY population_growth_pct DESC;
 --8
 select region , year, immigration_rate, emigration_rate, round((immigration_rate -  emigration_rate),2) net_migration_rates
 from population_data
