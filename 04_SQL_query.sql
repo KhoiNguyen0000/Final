@@ -18,20 +18,20 @@ Mục đích: Xem vùng có tăng dân số mạnh có tỷ lệ thất nghiệp
 Mục đích: Xem vùng nào thu hút hay mất dân cư.
 */
 --1
-select region, year, total_population from Locality_data
+select region, year, total_population from population_data
 go
 --2
 with max_population as(
 	select year, max(population_density) max_total
-	from Locality_data
+	from population_data
 	where region != N'Cả nước'
 	group by year)
 select ld.region, ld.year, mp.max_total
-from Locality_data ld, max_population mp
+from population_data ld, max_population mp
 where ld.region != N'Cả nước' and ld.year = mp.year and ld.population_density = mp.max_total
 --3
 select region, round(avg(natural_increase_rate), 2) avg_natural_increase_rate
-from Locality_data
+from population_data
 group by region
 --4
 go
@@ -42,7 +42,7 @@ with stat as (
 		STDEV(L.crude_birth_rate) as stdev_x,
 		STDEV(L.crude_death_rate) as stdev_y,
 		Count(*) as n
-	from Locality_data as L
+	from population_data as L
 	group by region 
 ),base as (
 	select
@@ -51,7 +51,7 @@ with stat as (
 		s.avg_x  , s.avg_y,
 		s.stdev_x, s.stdev_y,
 		s.n
-	from Locality_data as L CROSS JOIN stat as s 
+	from population_data as L CROSS JOIN stat as s 
 )
 select region,
 	SUM((crude_birth_rate - avg_x) *(crude_death_rate - avg_y)) /((MAX(n)-1) * MAX(stdev_x) * MAX(stdev_y)) as correlation
@@ -59,20 +59,20 @@ from base
 group by region
 --5
 select region, year, round((urban_population / total_population *100), 2) urbanization
-from Locality_data
+from population_data
 --6
-select REGION, AREA, Round(AVG(TOTAL),2) avg_total, round(AVG(URBAN),2) avg_urban, round(AVG(RURAL),2) avg_rural
-from Unemployed_Data
-group by REGION, AREA
+select REGION, area_type, Round(AVG(unemployment_rate),2) avg_total, round(AVG(urban_unemployment_rate),2) avg_urban, round(AVG(rural_unemployment_rate),2) avg_rural
+from population_data
+group by REGION, area_type
 order by region
 --7
-select ur.AREA, A.year, ur.TOTAL unemployment_total, A.growth
-from Unemployed_Data ur,(
+select p.region,p.area_type,p.unemployment_rate, A.growth
+from population_data as p, (
 	SELECT region, year, total_population, 
 	round(total_population - LAG(total_population) OVER(PARTITION BY region ORDER BY year),2) growth
-	FROM Locality_data)A
-where ur.AREA = A.region and ur.YEAR = A.year
-Order by A.growth desc
+	FROM population_data) as A
+where p.region = A.region and p.year = A.year
+
 --8
 select region , year, immigration_rate, emigration_rate, round((immigration_rate -  emigration_rate),2) net_migration_rates
-from Locality_data
+from population_data
