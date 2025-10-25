@@ -1,4 +1,4 @@
-use ADY201M_PROJECT
+use ADY201M
 /*
 1. Dân số trung bình theo vùng qua các năm
 Mục đích: Quan sát xu hướng tăng trưởng dân số theo thời gian.
@@ -24,39 +24,21 @@ go
 with max_population as(
 	select year, max(population_density) max_total
 	from population_data
-	where region != N'Cả nước'
 	group by year)
 select ld.region, ld.year, mp.max_total
 from population_data ld, max_population mp
-where ld.region != N'Cả nước' and ld.year = mp.year and ld.population_density = mp.max_total
+where ld.year = mp.year and ld.population_density = mp.max_total
 --3
-select region, round(avg(natural_increase_rate), 2) avg_natural_increase_rate
-from population_data
-group by region
---4
-go
-with stat as (
-	select
-		L.region,
-		AVG(L.crude_birth_rate) as avg_x , AVG(L.crude_death_rate) as avg_y,
-		STDEV(L.crude_birth_rate) as stdev_x,
-		STDEV(L.crude_death_rate) as stdev_y,
-		Count(*) as n
-	from population_data as L
-	group by region 
-),base as (
-	select
-		L.region,
-		L.crude_birth_rate,L.crude_death_rate,
-		s.avg_x  , s.avg_y,
-		s.stdev_x, s.stdev_y,
-		s.n
-	from population_data as L CROSS JOIN stat as s 
+with avg_natural_growth_rate as(
+	select region, avg(natural_growth_rate) avg_value
+	from population_data
+	group by region
 )
-select region,
-	SUM((crude_birth_rate - avg_x) *(crude_death_rate - avg_y)) /((MAX(n)-1) * MAX(stdev_x) * MAX(stdev_y)) as correlation
-from base
-group by region
+select *
+from avg_natural_growth_rate
+where avg_value = (select max(avg_value) from avg_natural_growth_rate)
+	or avg_value = (select min (avg_value) from avg_natural_growth_rate)
+
 --5
 select region, year, round((urban_population / total_population *100), 2) urbanization
 from population_data
